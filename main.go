@@ -6,6 +6,8 @@ import (
 	"log"
 	"os/exec"
 
+	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gtk"
 	"go.i3wm.org/i3/v4"
 )
 
@@ -28,7 +30,11 @@ func main() {
 		return bytes.Compare(bytes.TrimSpace(out), []byte("1")) == 0
 	}
 
-	subscribe()
+	go subscribe()
+
+	app, _ := gtk.ApplicationNew("com.github.BuJo.swaytab", glib.APPLICATION_FLAGS_NONE)
+	app.Connect("activate", gtkActivated)
+	app.Run(nil)
 }
 
 func subscribe() {
