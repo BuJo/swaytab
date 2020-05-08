@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
@@ -30,16 +32,20 @@ func main() {
 		return bytes.Compare(bytes.TrimSpace(out), []byte("1")) == 0
 	}
 
-	go subscribe()
+	if len(os.Args) > 1 {
+		go subscribe()
 
-	app, _ := gtk.ApplicationNew("com.github.BuJo.swaytab", glib.APPLICATION_FLAGS_NONE)
-	app.Connect("activate", gtkActivated)
-	app.Run(nil)
+		app, _ := gtk.ApplicationNew("com.github.BuJo.swaytab", glib.APPLICATION_FLAGS_NONE)
+		app.Connect("activate", gtkActivated)
+		app.Run(nil)
+	} else {
+		subscribe()
+	}
 }
 
 func subscribe() {
 
-	subscription := i3.Subscribe(i3.WorkspaceEventType, i3.WindowEventType, i3.ShutdownEventType)
+	subscription := i3.Subscribe(i3.WorkspaceEventType, i3.WindowEventType, i3.ShutdownEventType, i3.TickEventType)
 
 	o := NewOrg()
 
@@ -77,16 +83,13 @@ func subscribe() {
 	}
 
 	for n := subscription.Next(); n; n = subscription.Next() {
-		fmt.Println(o)
 		event := subscription.Event()
 		switch event.(type) {
 		case *i3.ShutdownEvent:
-			fmt.Println("shutting down")
 			break
 		case *i3.WindowEvent:
 			ev := event.(*i3.WindowEvent)
 
-			fmt.Println("win", ev.Change, ev.Container.ID)
 			switch ev.Change {
 			case "new":
 				o.WindowAdd(ev.Container)
@@ -98,7 +101,6 @@ func subscribe() {
 		case *i3.WorkspaceEvent:
 			ev := event.(*i3.WorkspaceEvent)
 
-			fmt.Println("ws", ev.Change, ev.Current, ev.Old)
 			switch ev.Change {
 			case "focus":
 				o.WorkspaceFront(i3.WorkspaceID(ev.Current.ID))
@@ -106,6 +108,19 @@ func subscribe() {
 				o.WorkspaceFront(i3.WorkspaceID(ev.Current.ID))
 			case "empty":
 				o.WorkspaceDelete(i3.WorkspaceID(ev.Current.ID))
+			}
+		case *i3.TickEvent:
+			ev := event.(*i3.TickEvent)
+			if strings.HasPrefix(ev.Payload, "swaytab:") {
+				switch strings.TrimPrefix(ev.Payload, "swaytab:") {
+				case "tab":
+					if len(o.n[o.w[0]]) > 1 {
+						nid := o.n[o.w[0]][1]
+						if rc, err := i3.RunCommand(fmt.Sprintf("[con_id=%d] focus", nid)); err != nil {
+							log.Println(err, rc)
+						}
+					}
+				}
 			}
 		}
 	}
