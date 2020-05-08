@@ -38,6 +38,10 @@ func main() {
 
 	// Initial workspace stack
 	wsse, err := i3.GetWorkspaces()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	for _, w := range wsse {
 		o.WorkspaceFront(w.ID)
 	}
@@ -45,6 +49,23 @@ func main() {
 		if w.Focused {
 			o.WorkspaceFront(w.ID)
 			break
+		}
+	}
+
+	// Initial window stack
+	tree, err := i3.GetTree()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	for _, output := range tree.Root.Nodes {
+		for _, workspace := range output.Nodes {
+			for _, n := range workspace.FloatingNodes {
+				o.WindowAddTo(*n, i3.WorkspaceID(workspace.ID))
+			}
+			for _, n := range workspace.FloatingNodes {
+				o.WindowAddTo(*n, i3.WorkspaceID(workspace.ID))
+			}
 		}
 	}
 
@@ -162,6 +183,13 @@ func (o *org) String() string {
 func (o *org) WindowAdd(n i3.Node) {
 	// Update cache
 	o.m[o.w[0]][n.ID] = n
+
+	o.n = append(o.n, n.ID)
+}
+
+func (o *org) WindowAddTo(n i3.Node, wsid i3.WorkspaceID) {
+	// Update cache
+	o.m[wsid][n.ID] = n
 
 	o.n = append(o.n, n.ID)
 }
