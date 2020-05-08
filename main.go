@@ -59,6 +59,8 @@ func main() {
 
 			fmt.Println("win", ev.Change, ev.Container.ID)
 			switch ev.Change {
+			case "new":
+				o.WindowAdd(ev.Container)
 			case "focus":
 				o.WindowFront(ev.Container)
 			}
@@ -153,4 +155,11 @@ func (o *org) WindowDelete(n i3.Node) {
 
 func (o *org) String() string {
 	return fmt.Sprintf("|%v|", o.w)
+}
+
+func (o *org) WindowAdd(n i3.Node) {
+	// Update cache
+	o.m[o.w[0]][n.ID] = n
+
+	o.n = append(o.n, n.ID)
 }
