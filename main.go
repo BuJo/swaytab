@@ -63,6 +63,8 @@ func main() {
 				o.WindowAdd(ev.Container)
 			case "focus":
 				o.WindowFront(ev.Container)
+			case "close":
+				o.WindowDelete(ev.Container)
 			}
 		case *i3.WorkspaceEvent:
 			ev := event.(*i3.WorkspaceEvent)
