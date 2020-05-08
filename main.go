@@ -36,11 +36,18 @@ func main() {
 
 	o := NewOrg()
 
+	// Initial workspace stack
 	wsse, err := i3.GetWorkspaces()
 	for _, w := range wsse {
 		o.WorkspaceFront(w.ID)
 	}
-	
+	for _, w := range wsse {
+		if w.Focused {
+			o.WorkspaceFront(w.ID)
+			break
+		}
+	}
+
 
 	for n := subscription.Next(); n; n = subscription.Next() {
 		event := subscription.Event()
@@ -52,14 +59,19 @@ func main() {
 			ev := event.(*i3.WindowEvent)
 			change := ev.Change
 
-			fmt.Println(change, ev.Container.ID)
+			fmt.Println("win", change, ev.Container.ID)
 		case *i3.WorkspaceEvent:
 			ev := event.(*i3.WorkspaceEvent)
 
-			fmt.Println(ev.Change, ev.Current, ev.Old)
+			fmt.Println("ws", ev.Change, ev.Current, ev.Old)
+			fmt.Println(o)
 			switch ev.Change {
+			case "focus":
+				o.WorkspaceFront(i3.WorkspaceID(ev.Current.ID))
 			case "init":
 				o.WorkspaceFront(i3.WorkspaceID(ev.Current.ID))
+			case "empty":
+				o.WorkspaceDelete(i3.WorkspaceID(ev.Current.ID))
 			}
 		}
 	}
@@ -68,7 +80,6 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-
 }
 
 type org struct {
@@ -90,11 +101,28 @@ func (o *org) WorkspaceFront(wsid i3.WorkspaceID) {
 		o.m[wsid] = make(map[i3.NodeID]i3.Node, 0)
 	}
 
-	// Move Workspace to front
+	// Move Workspace to front of stack
 	for i, id := range o.w {
 		if id == wsid {
 			o.w = append(o.w[:i], o.w[i+1:]...)
 		}
 	}
 	o.w = append([]i3.WorkspaceID{wsid}, o.w...)
+}
+
+func (o *org) WorkspaceDelete(wsid i3.WorkspaceID) {
+
+	// Delete cache
+	o.m[wsid] = nil
+
+	// Remove from stack
+	for i, id := range o.w {
+		if id == wsid {
+			o.w = append(o.w[:i], o.w[i+1:]...)
+		}
+	}
+}
+
+func (o *org) String() string {
+	return fmt.Sprintf("|%v|", o.w)
 }
