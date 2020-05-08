@@ -48,7 +48,6 @@ func main() {
 		}
 	}
 
-
 	for n := subscription.Next(); n; n = subscription.Next() {
 		event := subscription.Event()
 		switch event.(type) {
@@ -57,9 +56,12 @@ func main() {
 			break
 		case *i3.WindowEvent:
 			ev := event.(*i3.WindowEvent)
-			change := ev.Change
 
-			fmt.Println("win", change, ev.Container.ID)
+			fmt.Println("win", ev.Change, ev.Container.ID)
+			switch ev.Change {
+			case "focus":
+				o.WindowFront(ev.Container)
+			}
 		case *i3.WorkspaceEvent:
 			ev := event.(*i3.WorkspaceEvent)
 
@@ -113,12 +115,38 @@ func (o *org) WorkspaceFront(wsid i3.WorkspaceID) {
 func (o *org) WorkspaceDelete(wsid i3.WorkspaceID) {
 
 	// Delete cache
-	o.m[wsid] = nil
+	delete(o.m, wsid)
 
 	// Remove from stack
 	for i, id := range o.w {
 		if id == wsid {
 			o.w = append(o.w[:i], o.w[i+1:]...)
+		}
+	}
+}
+
+func (o *org) WindowFront(n i3.Node) {
+	// Update cache
+	o.m[o.w[0]][n.ID] = n
+
+	// Remove from stack
+	for i, id := range o.n {
+		if id == n.ID {
+			o.n = append(o.n[:i], o.n[i+1:]...)
+		}
+	}
+	o.n = append([]i3.NodeID{n.ID}, o.n...)
+}
+
+func (o *org) WindowDelete(n i3.Node) {
+
+	// Delete cache
+	delete(o.m[o.w[0]], n.ID)
+
+	// Remove from stack
+	for i, id := range o.n {
+		if id == n.ID {
+			o.n = append(o.n[:i], o.n[i+1:]...)
 		}
 	}
 }
