@@ -76,7 +76,7 @@ func subscribe() {
 			for _, n := range workspace.FloatingNodes {
 				o.WindowAddTo(*n, i3.WorkspaceID(workspace.ID))
 			}
-			for _, n := range workspace.FloatingNodes {
+			for _, n := range workspace.Nodes {
 				o.WindowAddTo(*n, i3.WorkspaceID(workspace.ID))
 			}
 		}
