@@ -60,7 +60,7 @@ func subscribe() {
 	// Initial workspace stack
 	wsse, err := i3.GetWorkspaces()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	for _, w := range wsse {
@@ -76,7 +76,7 @@ func subscribe() {
 	// Initial window stack
 	tree, err := i3.GetTree()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	for _, output := range tree.Root.Nodes {
@@ -117,23 +117,23 @@ func subscribe() {
 			case "new":
 				o.WindowAdd(ev.Container)
 			case "focus":
-				fmt.Println("win", ev.Change, o)
+				log.Println("win", ev.Change, o)
 				switch currentMode {
 				case TOGGLE:
 					o.WindowFront(ev.Container)
 				case CYCLE:
 					// do not modify stack
 					if currentDeadline == nil {
-						fmt.Println("dead", "init", o)
+						log.Println("dead", "init", o)
 						currentDeadline = time.AfterFunc(1000*time.Millisecond, func() {
-							fmt.Println("dead", "fire", o)
+							log.Println("dead", "fire", o)
 							o.WindowFrontID(cycleStartWindow)
 							o.WindowFront(ev.Container)
 							currentDeadline = nil
 							currentMode = TOGGLE
 						})
 					} else {
-						fmt.Println("dead", "reset", o)
+						log.Println("dead", "reset", o)
 						currentDeadline.Reset(1000 * time.Millisecond)
 					}
 				}
@@ -177,7 +177,7 @@ func subscribe() {
 
 					press = time.Now()
 
-					fmt.Println("tick", currentMode, currentWindow, "->", nextWindow, o)
+					log.Println("tick", currentMode, currentWindow, "->", nextWindow, o)
 					focusPos(o, nextWindow)
 				}
 			}
@@ -186,7 +186,7 @@ func subscribe() {
 
 	err = subscription.Close()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 }
 
