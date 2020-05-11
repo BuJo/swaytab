@@ -179,6 +179,30 @@ func subscribe() {
 
 					log.Println("tick", currentMode, currentWindow, "->", nextWindow, o)
 					focusPos(o, nextWindow)
+				case "tab:shift":
+					if time.Now().Sub(press) < 600*time.Millisecond {
+						if currentMode == TOGGLE {
+							cycleStartWindow = o.n[o.w[0]][currentWindow]
+						}
+						currentMode = CYCLE
+					} else {
+						currentMode = TOGGLE
+					}
+					var nextWindow int
+
+					switch currentMode {
+					case TOGGLE:
+						currentWindow = 0
+						nextWindow = currentWindow + 1
+					case CYCLE:
+						nextWindow = currentWindow - 1
+						currentWindow = nextWindow
+					}
+
+					press = time.Now()
+
+					log.Println("tick", currentMode, currentWindow, "->", nextWindow, o)
+					focusPos(o, nextWindow)
 				case "tab:release":
 					log.Println("tick release", time.Now().Sub(press))
 				default:
@@ -199,7 +223,8 @@ func focusPos(o *org, to int) {
 		return
 	}
 
-	to = to % len(o.n[o.w[0]])
+	n := len(o.n[o.w[0]])
+	to = ((to % n) + n) % n
 	nid := o.n[o.w[0]][to]
 	if rc, err := i3.RunCommand(fmt.Sprintf("[con_id=%d] focus", nid)); err != nil {
 		log.Println(err, rc)
