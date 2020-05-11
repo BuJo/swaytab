@@ -97,10 +97,12 @@ func subscribe() {
 		}
 	}
 
-	press := time.Now()
-	currentMode := TOGGLE
-	currentWindow := 0
-	var currentDeadline *time.Timer
+	var (
+		press           = time.Now()
+		currentMode     = TOGGLE
+		currentWindow   = 0
+		currentDeadline *time.Timer
+	)
 
 	for n := subscription.Next(); n; n = subscription.Next() {
 		event := subscription.Event()
