@@ -97,3 +97,13 @@ func (o *org) WindowAddTo(n i3.Node, wsid i3.WorkspaceID) {
 
 	o.n[wsid] = append(o.n[wsid], n.ID)
 }
+
+func (o *org) WindowFrontID(nid i3.NodeID) {
+	for _, w := range o.m {
+		for _, n := range w {
+			if n.ID == nid {
+				o.WindowFront(n)
+			}
+		}
+	}
+}

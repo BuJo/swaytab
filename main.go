@@ -98,10 +98,11 @@ func subscribe() {
 	}
 
 	var (
-		press           = time.Now()
-		currentMode     = TOGGLE
-		currentWindow   = 0
-		currentDeadline *time.Timer
+		press            = time.Now()
+		currentMode      = TOGGLE
+		currentWindow    = 0
+		currentDeadline  *time.Timer
+		cycleStartWindow i3.NodeID
 	)
 
 	for n := subscription.Next(); n; n = subscription.Next() {
@@ -126,6 +127,7 @@ func subscribe() {
 						fmt.Println("dead", "init", o)
 						currentDeadline = time.AfterFunc(1000*time.Millisecond, func() {
 							fmt.Println("dead", "fire", o)
+							o.WindowFrontID(cycleStartWindow)
 							o.WindowFront(ev.Container)
 							currentDeadline = nil
 							currentMode = TOGGLE
@@ -155,6 +157,9 @@ func subscribe() {
 				switch strings.TrimPrefix(ev.Payload, "swaytab:") {
 				case "tab":
 					if time.Now().Sub(press) < 600*time.Millisecond {
+						if currentMode == TOGGLE {
+							cycleStartWindow = o.n[o.w[0]][currentWindow]
+						}
 						currentMode = CYCLE
 					} else {
 						currentMode = TOGGLE
