@@ -179,6 +179,10 @@ func subscribe() {
 
 					log.Println("tick", currentMode, currentWindow, "->", nextWindow, o)
 					focusPos(o, nextWindow)
+				case "tab:release":
+					log.Println("tick release", time.Now().Sub(press))
+				default:
+					log.Println("Unknown tick:", ev.Payload)
 				}
 			}
 		}
