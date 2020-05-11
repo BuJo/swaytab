@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
@@ -42,6 +43,13 @@ func main() {
 		subscribe()
 	}
 }
+
+type mode int
+
+const (
+	CYCLE mode = iota
+	TOGGLE
+)
 
 func subscribe() {
 
@@ -87,6 +95,10 @@ func subscribe() {
 		}
 	}
 
+	press := time.Now()
+	currentMode := TOGGLE
+	currentWindow := 0
+	var currentDeadline *time.Timer
 
 	for n := subscription.Next(); n; n = subscription.Next() {
 		event := subscription.Event()
@@ -100,7 +112,25 @@ func subscribe() {
 			case "new":
 				o.WindowAdd(ev.Container)
 			case "focus":
-				o.WindowFront(ev.Container)
+				fmt.Println("win", ev.Change, o)
+				switch currentMode {
+				case TOGGLE:
+					o.WindowFront(ev.Container)
+				case CYCLE:
+					// do not modify stack
+					if currentDeadline == nil {
+						fmt.Println("dead", "init", o)
+						currentDeadline = time.AfterFunc(1000*time.Millisecond, func() {
+							fmt.Println("dead", "fire", o)
+							o.WindowFront(ev.Container)
+							currentDeadline = nil
+							currentMode = TOGGLE
+						})
+					} else {
+						fmt.Println("dead", "reset", o)
+						currentDeadline.Reset(1000 * time.Millisecond)
+					}
+				}
 			case "close":
 				o.WindowDelete(ev.Container)
 			}
@@ -120,12 +150,26 @@ func subscribe() {
 			if strings.HasPrefix(ev.Payload, "swaytab:") {
 				switch strings.TrimPrefix(ev.Payload, "swaytab:") {
 				case "tab":
-					if len(o.n[o.w[0]]) > 1 {
-						nid := o.n[o.w[0]][1]
-						if rc, err := i3.RunCommand(fmt.Sprintf("[con_id=%d] focus", nid)); err != nil {
-							log.Println(err, rc)
-						}
+					if time.Now().Sub(press) < 600*time.Millisecond {
+						currentMode = CYCLE
+					} else {
+						currentMode = TOGGLE
 					}
+					var nextWindow int
+
+					switch currentMode {
+					case TOGGLE:
+						currentWindow = 0
+						nextWindow = currentWindow + 1
+					case CYCLE:
+						nextWindow = currentWindow + 1
+						currentWindow = nextWindow
+					}
+
+					press = time.Now()
+
+					fmt.Println("tick", currentMode, currentWindow, "->", nextWindow, o)
+					focusPos(o, nextWindow)
 				}
 			}
 		}
@@ -134,5 +178,18 @@ func subscribe() {
 	err = subscription.Close()
 	if err != nil {
 		fmt.Println(err)
+	}
+}
+
+func focusPos(o *org, to int) {
+	if len(o.n[o.w[0]]) == 0 {
+		return
+	}
+
+	to = to % len(o.n[o.w[0]])
+	nid := o.n[o.w[0]][to]
+	if rc, err := i3.RunCommand(fmt.Sprintf("[con_id=%d] focus", nid)); err != nil {
+		log.Println(err, rc)
+
 	}
 }
