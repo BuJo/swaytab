@@ -81,6 +81,12 @@ func subscribe() {
 			}
 		}
 	}
+	for _, w := range o.m[o.w[0]] {
+		if w.Focused {
+			o.WindowFront(w)
+		}
+	}
+
 
 	for n := subscription.Next(); n; n = subscription.Next() {
 		event := subscription.Event()
