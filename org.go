@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"sync"
+
 	"go.i3wm.org/i3/v4"
 )
 
@@ -9,16 +11,21 @@ type org struct {
 	m map[i3.WorkspaceID]map[i3.NodeID]i3.Node
 	w []i3.WorkspaceID
 	n map[i3.WorkspaceID][]i3.NodeID
+
+	mutex *sync.Mutex
 }
 
 func NewOrg() *org {
 	return &org{
-		m: make(map[i3.WorkspaceID]map[i3.NodeID]i3.Node, 0),
-		n: make(map[i3.WorkspaceID][]i3.NodeID, 0),
+		m:     make(map[i3.WorkspaceID]map[i3.NodeID]i3.Node, 0),
+		n:     make(map[i3.WorkspaceID][]i3.NodeID, 0),
+		mutex: &sync.Mutex{},
 	}
 }
 
 func (o *org) WorkspaceFront(wsid i3.WorkspaceID) {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
 
 	// If new, create new window cache
 	if _, ok := o.m[wsid]; !ok {
@@ -37,6 +44,8 @@ func (o *org) WorkspaceFront(wsid i3.WorkspaceID) {
 }
 
 func (o *org) WorkspaceDelete(wsid i3.WorkspaceID) {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
 
 	// Delete cache
 	delete(o.m, wsid)
@@ -51,6 +60,9 @@ func (o *org) WorkspaceDelete(wsid i3.WorkspaceID) {
 }
 
 func (o *org) WindowFront(n i3.Node) {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+
 	// Update cache
 	wsid := o.w[0]
 	o.m[wsid][n.ID] = n
@@ -66,6 +78,8 @@ func (o *org) WindowFront(n i3.Node) {
 }
 
 func (o *org) WindowDelete(n i3.Node) {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
 
 	// Delete cache
 	wsid := o.w[0]
@@ -80,10 +94,16 @@ func (o *org) WindowDelete(n i3.Node) {
 }
 
 func (o *org) String() string {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+
 	return fmt.Sprintf("|%v|%v", o.w, o.n[o.w[0]])
 }
 
 func (o *org) WindowAdd(n i3.Node) {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+
 	// Update cache
 	wsid := o.w[0]
 	o.m[wsid][n.ID] = n
@@ -92,6 +112,9 @@ func (o *org) WindowAdd(n i3.Node) {
 }
 
 func (o *org) WindowAddTo(n i3.Node, wsid i3.WorkspaceID) {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+
 	// Update cache
 	o.m[wsid][n.ID] = n
 
