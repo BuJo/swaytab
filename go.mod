@@ -1,9 +1,9 @@
 module github.com/BuJo/swaytab
 
-go 1.19
+go 1.20
 
 require (
-	github.com/gotk3/gotk3 v0.6.1
+	github.com/gotk3/gotk3 v0.6.2
 	go.i3wm.org/i3/v4 v4.21.0
 )
 
