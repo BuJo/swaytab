@@ -1,4 +1,4 @@
-# swaytab
+# `swaytab`
 
 Attempts to recreate the alt-tab behaviour from Openbox for sway.
 
@@ -15,7 +15,6 @@ Then simply run the daemon.
 
 ### TODO
 
-* Does not detect `alt`-key up, so cannnot use that to detect finished cycle
+* Does not detect `alt`-key up, so cannot use that to detect finished cycle
 * First window after toggling when moving to cycle mod is wrong
 * Focuses windows outside of current workspace
-
