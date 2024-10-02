@@ -3,7 +3,7 @@ module github.com/BuJo/swaytab
 go 1.22
 
 require (
-	github.com/gotk3/gotk3 v0.6.3
+	github.com/gotk3/gotk3 v0.6.4
 	go.i3wm.org/i3/v4 v4.21.0
 )
 
